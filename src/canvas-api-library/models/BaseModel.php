@@ -5,7 +5,7 @@ use CanvasApiLibrary\Exceptions\NotPopulatedException;
 
 abstract class BaseModel{
 
-    public readonly int $canvasID;
+    public readonly int $id;
     /**
      * A list of property names to be dynamically generated/handled. 
      * Optionally, instead of a property name, a [type, name] can be given, which will be used for type checking on setting.
