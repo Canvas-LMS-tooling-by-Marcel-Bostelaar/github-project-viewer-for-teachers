@@ -1,5 +1,7 @@
 <?php
+
 namespace CanvasApiLibrary\Models;
 
-class GroupCategory extends BaseModel{
+class Course extends BaseModel{
+    
 }

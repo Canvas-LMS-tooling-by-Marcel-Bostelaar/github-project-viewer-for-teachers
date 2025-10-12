@@ -1,13 +1,43 @@
 <?php
 namespace CanvasApiLibrary\Services;
 
-class BaseCanvasCommunicator{
+abstract class AbstractCanvasCommunicator{
     public function __construct(
         public readonly string $baseURL,
         public readonly string $apiKey
     ){}
 
+    private static function checkForStatusErrors(mixed $data): CanvasReturnStatus{
+        if(!is_array($data)){
+            return CanvasReturnStatus::SUCCESS;
+        }
+        if(isset($data["status"])){
+            if($data["status"] == "not found"){
+                return CanvasReturnStatus::NOT_FOUND;
+            }
+        }
+        if(isset($data["errors"])){
+            return CanvasReturnStatus::ERROR;
+        }
+        return CanvasReturnStatus::SUCCESS;
+    }
+
+    public function Get(string $route) : array{
+        return self::curlGet($this->baseURL . $route, $this->apiKey);
+    }
+
+    public function Put(string $route, mixed $data) : array{
+        return self::curlPut($this->baseURL . $route, $this->apiKey, $data);
+    }
+
     //Static cURL calls
+    /**
+     * Summary of curlGet
+     * @param mixed $url
+     * @param mixed $apiKey
+     * @throws \Exception
+     * @return [mixed, CanvasReturnStatus]
+     */
     protected static function curlGet($url, $apiKey): array {
         // echo "Fetching URL: $url<br>";
         // Initialize cURL
@@ -39,13 +69,6 @@ class BaseCanvasCommunicator{
 
         // Close
         curl_close($ch);
-        if(isset($data["errors"])){
-            $errors = "URL: $url\n";
-            foreach($data["errors"] as $message){
-                $errors .= $message["message"] . "\n";
-            }
-            throw new \Exception($errors);
-        }
         // var_dump($data);
         //if a next link for paginated results was found, call it recursively, append all results together.
         if($nextURLHandler->nextURL !== null){
@@ -68,10 +91,18 @@ class BaseCanvasCommunicator{
             }
         }
         // echo "Total data: " . count($data) . "<br>";
-        return $data;
+        return [$data, self::checkForStatusErrors($data)];
     }
 
-    protected static function curlPut($url, $apiKey, $data): void {
+    /**
+     * Summary of curlPut
+     * @param mixed $url
+     * @param mixed $apiKey
+     * @param mixed $data
+     * @throws \Exception
+     * @return [mixed, CanvasReturnStatus]
+     */
+    protected static function curlPut($url, $apiKey, $data): array {
         // echo $url . "<br>";
         // echo "Fetching URL: $url<br>";
         // Initialize cURL
@@ -103,12 +134,6 @@ class BaseCanvasCommunicator{
 
         // Close
         curl_close($ch);
-        if(isset($data["errors"])){
-            $errors = "URL: $url\n";
-            foreach($data["errors"] as $message){
-                $errors .= $message["message"] . "\n";
-            }
-            throw new \Exception($errors);
-        }
+        return [$data, self::checkForStatusErrors($data)];
     }
 }

@@ -15,6 +15,16 @@ abstract class BaseModel{
      * @var array<string|array>
      */
     protected static array $properties = [];
+    /**
+     * A list of property names to be dynamically generated/handled. 
+     * Optionally, instead of a property name, a [type, name] can be given, which will be used for type checking on setting.
+     * If an unpopulated property is accessed, null is returned.
+     * List is used to calculate whether or not a model is fully populated.
+     * Use docstring to provide info about properties to tooling.
+     * @var array<string|array>
+     * @var array
+     */
+    protected static array $nullableProperties = [];
     private array $virtualProperties = [];
 
     public function __get($name) {
@@ -28,15 +38,15 @@ abstract class BaseModel{
                 E_USER_NOTICE);
         }
         if($this->virtualProperties[$name]['value'] === null){
+            if($this->virtualProperties[$name]['nullable']){
+                return null;
+            }
             throw new NotPopulatedException("Property $name has not been populated yet. Please populate the model first.");
         }
         return $this->virtualProperties[$name]['value'];
     }
 
     public function __set($name, $value) {
-        if($value === null){
-            throw new \InvalidArgumentException("Property $name cannot be set to null.");
-        }
         if (!array_key_exists($name, $this->virtualProperties)){
             $trace = debug_backtrace();
             $classname = get_class($this);
@@ -45,6 +55,13 @@ abstract class BaseModel{
                 ' in ' . $trace[0]['file'] .
                 ' on line ' . $trace[0]['line'],
                 E_USER_NOTICE);
+        }
+        if($value === null){
+            if(!$this->virtualProperties[$name]['nullable']){
+                throw new \InvalidArgumentException("Property $name cannot be set to null.");
+            }
+            $this->virtualProperties[$name]['value'] = $value;
+            return;
         }
         $type = $this->virtualProperties[$name]['type'];
         if($type !== null){
@@ -95,8 +112,12 @@ abstract class BaseModel{
     protected function __construct(int $canvasID){
         $this->canvasID = $canvasID;
 
-        //Set up virtual properties
-        foreach($this->properties as $property){
+        $this->processProperties(static::$properties, false);
+        $this->processProperties(static::$nullableProperties, false);
+    }
+
+    private function processProperties($propertyData, $nullable){//Set up virtual properties
+        foreach($propertyData as $property){
             $type = null;
             $name = null;
             if(is_array($property)){
@@ -119,19 +140,9 @@ abstract class BaseModel{
             }
             $this->virtualProperties[$name] = [
                 'type' => $type,
-                'value' => null
+                'value' => null,
+                'nullable' => $nullable
             ];
         }
-    }
-
-    /**
-     * Creates a non-populated ghost version of the model.
-     * Use this for retrieving data based on an ID provided in a url, for example, which only needs the ID.
-     * Non populated models can be returned by some endpoints as well.
-     * @param mixed $canvasID
-     * @return self
-     */
-    public static function createStub($canvasID): static{
-        return new static($canvasID);
     }
 }

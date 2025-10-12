@@ -1,24 +1,27 @@
 <?php
 namespace CanvasApiLibrary\Providers;
 use CanvasApiLibrary\Models as Models;
-use CanvasApiLibrary\Models\Group;
+use CanvasApiLibrary\Models\Section;
 use CanvasApiLibrary\Services as Services;
 use CanvasApiLibrary\Services\CanvasGlobalCommunicator;
-class GroupProvider extends AbstractProvider{
+class SectionProvider extends AbstractProvider{
     public function __construct(public readonly Services\StatusHandlerInterface $statusHandler){}
 
     /**
      * Summary of getAllGroupsInGroupCategory
      * @param \CanvasApiLibrary\Models\GroupCategory $category
      * @param \CanvasApiLibrary\Services\CanvasGlobalCommunicator $communicator
-     * @return Models\Group[]
+     * @return Models\Section[]
      */
-    public function getAllGroupsInGroupCategory(Models\GroupCategory $category, CanvasGlobalCommunicator $communicator) : array{
+    public function getAllSectionsInCourse(CanvasGlobalCommunicator $communicator) : array{
         return $this->Get($communicator, 
-        "/group_categories/{$category->id}/groups");
+        "/sections");
     }
 
     public function MapData(mixed $data, array $suplementaryDataMapping = []): array{
-        return array_map_to_models($data, Group::class, ["name", ...$suplementaryDataMapping]);
+        return array_map_to_models($data, Section::class, [
+            "name", 
+            ["course_id", fn($v) => new Models\Course($v)],
+            ...$suplementaryDataMapping]);
     }
 }
