@@ -1,7 +1,10 @@
 <?php
 
 namespace CanvasApiLibrary\Models;
+use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
 
-class Course extends BaseModel{
-    
+class Course extends AbstractCanvasPopulatedModel{
+    public static function getPluralNames(): array{
+        return ["Courses"];
+    }
 }

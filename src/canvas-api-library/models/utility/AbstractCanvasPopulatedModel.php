@@ -1,11 +1,23 @@
 <?php
 
-namespace CanvasApiLibrary\Models;
+namespace CanvasApiLibrary\Models\Utility;
 use CanvasApiLibrary\Exceptions\NotPopulatedException;
+use CanvasApiLibrary\Models\Domain;
 
-abstract class BaseModel{
+abstract class AbstractCanvasPopulatedModel implements ModelInterface{
 
-    public readonly int $id;
+    /**
+     * Constructs a new basemodel. Do not override the constructor with non-optional parameters.
+     * @param Domain $domain The domain of the canvas object
+     * @param int $id The canvas ID of the object.
+     */
+    public function __construct(public readonly Domain $domain, public readonly int $id){
+        $this->processProperties(static::$properties, false);
+        $this->processProperties(static::$nullableProperties, false);
+    }
+    public function getUniqueId(): mixed {
+        return $this->domain->domain . "-" . $this::class . "-" . $this->id;
+    }
     /**
      * A list of property names to be dynamically generated/handled. 
      * Optionally, instead of a property name, a [type, name] can be given, which will be used for type checking on setting.
@@ -104,16 +116,6 @@ abstract class BaseModel{
             }
             return true;
         }
-    }
-    /**
-     * Constructs a new basemodel. Do not override the constructor with non-optional parameters.
-     * @param int $canvasID The canvas ID of the object.
-     */
-    protected function __construct(int $canvasID){
-        $this->canvasID = $canvasID;
-
-        $this->processProperties(static::$properties, false);
-        $this->processProperties(static::$nullableProperties, false);
     }
 
     private function processProperties($propertyData, $nullable){//Set up virtual properties

@@ -1,6 +1,7 @@
 <?php
 
 namespace CanvasApiLibrary\Models;
+use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
 
 /**
  * @property Student $student
@@ -8,7 +9,7 @@ namespace CanvasApiLibrary\Models;
  * @property ?string $url
  * @property ?\DateTime $submittedAt
  */
-class Submission extends BaseModel{
+class Submission extends AbstractCanvasPopulatedModel{
     protected static array $properties = [
         [Student::class, "student"],
         [Assignment::class, "assignment"]
@@ -17,4 +18,8 @@ class Submission extends BaseModel{
         ["string", "url"], 
         [\DateTime::class, "submittedAt"]
     ];
+
+    public static function getPluralNames(): array{
+        return ["Submissions"];
+    }
 }

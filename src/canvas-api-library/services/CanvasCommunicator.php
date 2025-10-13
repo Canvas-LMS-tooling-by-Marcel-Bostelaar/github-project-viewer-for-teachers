@@ -1,9 +1,10 @@
 <?php
 namespace CanvasApiLibrary\Services;
 
-abstract class AbstractCanvasCommunicator{
+use CanvasApiLibrary\Models\Domain;
+
+class CanvasCommunicator{
     public function __construct(
-        public readonly string $baseURL,
         public readonly string $apiKey
     ){}
 
@@ -22,12 +23,12 @@ abstract class AbstractCanvasCommunicator{
         return CanvasReturnStatus::SUCCESS;
     }
 
-    public function Get(string $route) : array{
-        return self::curlGet($this->baseURL . $route, $this->apiKey);
+    public function Get(string $route, Domain $domain) : array{
+        return self::curlGet($domain->domain . $route, $this->apiKey);
     }
 
-    public function Put(string $route, mixed $data) : array{
-        return self::curlPut($this->baseURL . $route, $this->apiKey, $data);
+    public function Put(string $route, Domain $domain, mixed $data) : array{
+        return self::curlPut($domain->domain . $route, $this->apiKey, $data);
     }
 
     //Static cURL calls

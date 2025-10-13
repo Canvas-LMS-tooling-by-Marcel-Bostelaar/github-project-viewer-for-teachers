@@ -1,20 +1,23 @@
 <?php
 namespace CanvasApiLibrary\Providers;
 
+use CanvasApiLibrary\Models\Domain;
+
 /**
  * Creates new model instances populated with the data given.
  * @param array $data An array of associative arrays, each representing the data for one model instance.
+ * @param Domain $domain The domain of the canvas object
  * @param string $modelClass The class name of the model to create instances of.
  * @param array $keymapping An array of key mappings. Each mapping can be either a string (indicating the same key in both source data and model) or an array of two strings (the first being the key in the source data, the second being the property name in the model).
  * @throws \Exception if the key mapping is invalid.
  * @return mixed[] An array of model instances populated with the data. 
  */
-function array_map_to_models(array $data, string $modelClass, array $keymapping){
-    $keymapping = processRules($keymapping);
+function array_map_to_models(array $data, Domain $domain, string $modelClass, array $keymapping){
+    $keymapping = processRules($keymapping, $domain);
 
     $results = [];
     foreach($data as $item){
-        $newModel = new $modelClass($item["id"]);
+        $newModel = new $modelClass($domain, $item["id"]);
         foreach($keymapping as $mapping){
             $mapping["process"]($newModel, $item[$mapping["key"]]);
         }
@@ -24,8 +27,8 @@ function array_map_to_models(array $data, string $modelClass, array $keymapping)
 }
 
 
-function processRules(array $keymappings){
-    $keymappings = array_map(fn($x) => handle_provider($x), $keymappings);
+function processRules(array $keymappings, Domain $domain){
+    $keymappings = array_map(fn($x) => handle_provider($x, $domain), $keymappings);
     $keymappings = array_map(fn($x) => handle_string($x), $keymappings);
     $keymappings = array_map(fn($x) => handle_string_string($x), $keymappings);
     $keymappings = array_map(fn($x) => handle_string_process($x), $keymappings);
@@ -74,12 +77,12 @@ function handle_string_process($x){
  * Setup processor that passes data found in key to handleEmitted. Used to parse additional info on call.
  * @param mixed $x
  */
-function handle_provider($x){
+function handle_provider($x, Domain $domain){
     if(is_array($x) && count($x) == 2 && is_string($x[0]) && is_object($x[1])){
         if($x[1] instanceof AbstractProvider){
             return [
                 "key" => $x[0],
-                "process" => fn($instance, $value) => $x[1]->HandleEmitted($value)
+                "process" => fn($instance, $value) => $x[1]->HandleEmitted($value, $domain)
             ];
         }
     }
