@@ -19,17 +19,6 @@ use function CanvasApiLibrary\Providers\Utility\array_map_to_models;
  */
 class SubmissionProvider extends AbstractProvider{
 
-
-    public function MapData(mixed $data, Domain $domain, array $suplementaryDataMapping = []): array{
-        return array_map_to_models($data, $domain, Submission::class, [
-            "url", 
-            ["submittedAt", fn($v) => $v ? new \DateTime($v) : null],
-            ["assignment", "assignment_id", fn($v) => new Models\Assignment($domain, $v)],
-            ["student", "user_id", fn($v) => new Models\Student($domain, $v)],
-            ...$suplementaryDataMapping
-        ]);
-    }
-
     /**
      * @param \CanvasApiLibrary\Models\Domain $domain
      * @param \CanvasApiLibrary\Models\Course $course
@@ -42,5 +31,16 @@ class SubmissionProvider extends AbstractProvider{
         return $this->Get($domain, "courses/$course->id/assignments/$assignment->id/submissions$postfix",
             $studentProvider ? [["user", $studentProvider]] : []
         );
+    }
+
+
+    public function MapData(mixed $data, Domain $domain, array $suplementaryDataMapping = []): array{
+        return array_map_to_models($data, $domain, Submission::class, [
+            "url", 
+            ["submittedAt", fn($v) => $v ? new \DateTime($v) : null],
+            ["assignment", "assignment_id", fn($v) => new Models\Assignment($domain, $v)],
+            ["student", "user_id", fn($v) => new Models\Student($domain, $v)],
+            ...$suplementaryDataMapping
+        ]);
     }
 }

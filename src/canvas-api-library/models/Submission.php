@@ -9,7 +9,7 @@ use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
  * @property ?string $url
  * @property ?\DateTime $submittedAt
  */
-class Submission extends AbstractCanvasPopulatedModel{
+final class Submission extends AbstractCanvasPopulatedModel{
     protected static array $properties = [
         [Student::class, "student"],
         [Assignment::class, "assignment"]

@@ -6,7 +6,7 @@ use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
 /**
  * @property string $name
  */
-class Student extends AbstractCanvasPopulatedModel{
+final class Student extends AbstractCanvasPopulatedModel{
     protected static array $properties = [
         ["string", "name"]
     ];

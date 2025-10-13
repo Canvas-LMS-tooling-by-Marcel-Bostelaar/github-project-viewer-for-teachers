@@ -8,7 +8,7 @@ use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
  * @property string $comment
  * @property \DateTime $date
  */
-class SubmissionFeedback extends AbstractCanvasPopulatedModel{
+final class SubmissionFeedback extends AbstractCanvasPopulatedModel{
     protected static array $properties = [
         ["string", "feedbackGiver"],
         ["string", "comment"],

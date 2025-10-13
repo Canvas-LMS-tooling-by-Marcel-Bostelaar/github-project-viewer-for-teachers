@@ -55,6 +55,9 @@ abstract class AbstractCanvasPopulatedModel implements ModelInterface{
             }
             throw new NotPopulatedException("Property $name has not been populated yet. Please populate the model first.");
         }
+        if(is_a($this->virtualProperties[$name]['type'], AbstractCanvasPopulatedModel::class, true)){
+            return new ($this->virtualProperties[$name]['type'])($this->domain, $this->virtualProperties[$name]['value']);
+        }
         return $this->virtualProperties[$name]['value'];
     }
 
@@ -80,6 +83,9 @@ abstract class AbstractCanvasPopulatedModel implements ModelInterface{
             if(!self::isA($value, $type)){
                 throw new \InvalidArgumentException("Property $name must be of type $type, " . gettype($value) . " given.");
             }
+        }
+        if($value instanceof AbstractCanvasPopulatedModel){
+            $value = $value->id;
         }
         $this->virtualProperties[$name]['value'] = $value;
     }

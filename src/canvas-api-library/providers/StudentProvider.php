@@ -29,6 +29,12 @@ class StudentProvider extends AbstractProvider{
         return $this->Get($domain, "/groups/{$group->id}/users");
     }
 
+    public function getStudentsInSection(Domain $domain, Models\Section $section): array{
+        return $this->Get($domain, 
+        "/sections/{$section->id}/enrollments?type[]=StudentEnrollment&per_page=100", 
+        [], fn($x) => $x["user"]);
+    }
+
     public function MapData(mixed $data, Domain $domain, array $suplementaryDataMapping = []): array{
         return array_map_to_models($data, $domain, Student::class, ["name", ...$suplementaryDataMapping]);
     }

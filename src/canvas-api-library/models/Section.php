@@ -3,7 +3,7 @@
 namespace CanvasApiLibrary\Models;
 use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
 
-class Section extends AbstractCanvasPopulatedModel{
+final class Section extends AbstractCanvasPopulatedModel{
     protected static array $properties = [
         ["string", "name"],
         [Course::class, "course"]

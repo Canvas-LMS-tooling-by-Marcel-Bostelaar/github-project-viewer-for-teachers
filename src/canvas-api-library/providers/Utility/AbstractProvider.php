@@ -1,5 +1,6 @@
 <?php
 namespace CanvasApiLibrary\Providers\Utility;
+use CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel;
 use CanvasApiLibrary\Models\Utility\ModelInterface;
 use CanvasApiLibrary\Services\CanvasCommunicator;
 use CanvasApiLibrary\Services\StatusHandlerInterface;
@@ -23,16 +24,109 @@ abstract class AbstractProvider{
     }
 
     /**
-     * Maps data
+     * Summary of MapData
      * @param mixed $data
+     * @param \CanvasApiLibrary\Models\Domain $domain
+     * @param array $suplementaryDataMapping Additional key value mappings to apply when mapping data.
+     * Allowed formats: 
+     *  string (one to one mapping)
+     *  [string, callable] transforms key to value using callable
+     *  [string, string, callable] transforms key to value using callable with second argument as the target name
      * @return \CanvasApiLibrary\Models\Utility\AbstractCanvasPopulatedModel[]
      */
-    protected abstract function MapData(mixed $data, Domain $domain, array $suplementaryDataMapping): array;
+    abstract protected function MapData(mixed $data, Domain $domain, array $suplementaryDataMapping): array;
+    abstract protected function populateModel(Domain $domain, $model, mixed $data): AbstractCanvasPopulatedModel;
 
-    protected function Get(Domain $domain, string $route, array $suplementaryDataMapping = []): array{
+    protected function Get(Domain $domain, string $route, array $suplementaryDataMapping = [], ?callable $preprocess = null): array{
         [$data, $status] = $this->canvasCommunicator->Get($route, $domain);
         $data = $this->statusHandler->HandleStatus($data, $status);
+        if($preprocess){
+            $data = array_map($preprocess, $data);
+        }
         return $this->MapData($data, $domain, $suplementaryDataMapping);
+    }
+
+    /**
+     * Handles unknown method calls with magic methods for the following cases, using plurals provided by the model, and the method name, 
+     * to detect which item to provide the magic method for.
+     * 
+     * Starting with populate, provides array mapped version.
+     * Original: populateThing: Thing -> Thing. Thing subclasses AbstractCanvasPopulatedModel
+     * Magic method: populate<Things>: Thing[] -> Thing[].
+     * 
+     * Ending with ForThing, provided array mapped version for that Thing.
+     * Original: doSomethingForThing: YourArgs -> Thing -> InAny -> In -> Order -> Mixed. Thing can be in any position.
+     * Magic method: doSomethingFor<Things>: YourArgs -> Thing[] -> InAny -> Order -> Mixed[]. Position maintained.
+     * @param string $method
+     * @param mixed $args
+     * @throws \BadMethodCallException
+     * @return AbstractCanvasPopulatedModel[]|Lookup
+     */
+    public function __call($method, $args){
+        //Match any methods with For in the middle, preceded by a lowercase letter and followed by an uppercase, such as getCommentsForAssignments
+        if(preg_match('/[a-z]For[A-Z]/', $method)){
+            return $this->handle__callForPlural($method, $args);
+        }
+        //Match any methods starting with populate, followed by a capital letter, such as populateAssignments
+        if(preg_match('/^populate[A-Z]/', $method)){
+            return $this->handle__callPopulate($method, $args);
+        }
+        throw new \BadMethodCallException("No such method: $method.");
+    }
+
+    private static function stripNamespace(string $fullClassName): string{
+        $parts = explode("\\", $fullClassName);
+        return end($parts);
+    }
+
+    /**
+     * Handles calls to "populate<Thing>s" methods. Performs an array_map over the original populate method, to allow passing an array of objects to populate.
+     * Only works for models extending AbstractCanvasPopulatedModel, not just any ModelInterface, because populate only works for canvas populated models.
+     * @param string $method
+     * @param mixed $args
+     * @throws \BadMethodCallException
+     * @return AbstractCanvasPopulatedModel[]
+     */
+    private function handle__callPopulate($method, $args): array{
+        //checks
+        $exceptionInvalidArgs = new \BadMethodCallException("Attempting call to magic populate<Thing>s call (array version of populate<Thing>). Invalid call. First and only argument to $method must be an array of AbstractCanvasPopulatedModel.");
+        if(count($args) !== 1){
+            throw $exceptionInvalidArgs;
+        }
+        if(!is_array($args[0])){
+            throw $exceptionInvalidArgs;
+        }
+        if(!is_a($args[0], AbstractCanvasPopulatedModel::class, true)){
+            throw $exceptionInvalidArgs;
+        }
+        $validPlural = false;
+        foreach($args[0]->getPluralNames() as $plural){
+            if($method == "populate$plural"){
+                $validPlural = true;
+                break;
+            }
+        }
+        if(!$validPlural){
+            throw new \BadMethodCallException("No such method: $method. Invalid plural name for given array of models " . $args[0]::class . 
+            ". Valid method names: " . implode(", ", array_map(fn($x) => "populate$x", $args[0]->getPluralNames())) . ".");
+        }
+        
+        $foundItemClass = $args[0]::class;
+        $strippedClass = self::stripNamespace($foundItemClass);
+        $fixedMethodName = "populate$strippedClass";
+        if(!method_exists($this, $fixedMethodName)){
+            throw new \BadMethodCallException("Unknown method: $method. No corresponding method $fixedMethodName found.");
+        }
+
+        //actual calls
+        $populatedItems = [];
+        foreach($args[0] as $item){
+            if(!is_a($item, $foundItemClass, true)){
+                throw new \BadMethodCallException("Array passed to $method contains an item that is not of type $foundItemClass: " . serialize($item) . ".");
+            }
+            $populatedItems[] = $this->{"populate$strippedClass"}($item);
+        }
+        return $populatedItems;
     }
 
     /**
@@ -46,10 +140,12 @@ abstract class AbstractProvider{
      * @throws \BadMethodCallException
      * @return Lookup
      */
-    public function __call($method, $args){
+    private function handle__callForPlural($method, $args){
+        //checks
         $indexOfMultiItem = -1;
         $foundPluralName = null;
         for($i = 0; $i < count($args); $i++){
+            //if the argument is an array, and the first item in the array is a subclass of ModelInterface
             if(is_array($args[$i]) && count($args[$i]) > 0 && is_subclass_of($args[$i][0], ModelInterface::class)){
                 $plurals = $args[$i][0]::getPluralNames();
                 foreach($plurals as $plural){
@@ -67,7 +163,8 @@ abstract class AbstractProvider{
         if($indexOfMultiItem === -1){
             throw new \BadMethodCallException("Unknown method: $method.");
         }
-        $singularName = $args[$indexOfMultiItem][0]::class;
+        $singularClassnameFull = $args[$indexOfMultiItem][0]::class;
+        $singularName = self::stripNamespace($args[$indexOfMultiItem][0]::class);
         $fixedMethodName = substr($method, -strlen($foundPluralName), strlen($foundPluralName)) . $singularName;
 
         if(!method_exists($this, $fixedMethodName)){
@@ -79,8 +176,8 @@ abstract class AbstractProvider{
         $newLookup = new Lookup();
         try{
             foreach($args[$indexOfMultiItem] as $item){
-                if(!is_a($item, $singularName, true)){
-                    throw new \BadMethodCallException("Array passed to $method contains an item that is not of type $singularName: " . serialize($item) . ".");
+                if(!is_a($item, $singularClassnameFull, true)){
+                    throw new \BadMethodCallException("Array passed to $method contains an item that is not of type $singularClassnameFull: " . serialize($item) . ".");
                 }
                 $newLookup->add($item, 
                     call_user_func([$this, $fixedMethodName], ...array_merge($headArgs, [$item], $tailArgs))
