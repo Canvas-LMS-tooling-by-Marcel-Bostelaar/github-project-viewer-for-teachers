@@ -4,6 +4,13 @@ use CanvasApiLibrary\Models as Models;
 use CanvasApiLibrary\Models\Group;
 use CanvasApiLibrary\Services as Services;
 use CanvasApiLibrary\Services\CanvasGlobalCommunicator;
+
+/**
+ * Provider for Canvas API group operations
+ * 
+ * @method \CanvasApiLibrary\Providers\Lookup<Models\GroupCategory, Models\Group> GetAllGroupsInGroupCategories() Virtual method to get all groups in group categories
+ * @method int GetAllGroupsInGroupCategories2() Virtual method to get all groups in group categories
+ */
 class GroupProvider extends AbstractProvider{
     public function __construct(public readonly Services\StatusHandlerInterface $statusHandler){}
 
@@ -22,3 +29,6 @@ class GroupProvider extends AbstractProvider{
         return array_map_to_models($data, Group::class, ["name", ...$suplementaryDataMapping]);
     }
 }
+
+$test = new GroupProvider(null);
+$test->GetAllGroupsInGroupCategories();

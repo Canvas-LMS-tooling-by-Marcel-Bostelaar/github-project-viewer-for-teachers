@@ -29,4 +29,9 @@ abstract class AbstractProvider{
         $data = $this->statusHandler->HandleStatus($data, $status);
         return $this->MapData($data, $suplementaryDataMapping);
     }
+
+    //TODO implement dynamic method calls for multi-getters
+    //Implement some magic for english pluralization? Or just require basemodels to define their plural forms?
+    //Re-implement calls to always ask for the systemURL, courseid, assignment? Maybe make optional and fetch from a seperate helper if it doesnt exist?
+    //Pass a context array that just has those keys for usability. Pass the actual communicator into the construct call of the provider.
 }
