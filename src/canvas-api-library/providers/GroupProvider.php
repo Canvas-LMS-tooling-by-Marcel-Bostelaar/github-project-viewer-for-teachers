@@ -3,8 +3,10 @@ namespace CanvasApiLibrary\Providers;
 use CanvasApiLibrary\Models as Models;
 use CanvasApiLibrary\Models\Group;
 use CanvasApiLibrary\Services as Services;
-use CanvasApiLibrary\Services\CanvasGlobalCommunicator;
 use CanvasApiLibrary\Models\Domain;
+use CanvasApiLibrary\Providers\Utility\AbstractProvider;
+use CanvasApiLibrary\Providers\Utility\Lookup;
+use function CanvasApiLibrary\Providers\Utility\array_map_to_models;
 
 /**
  * Provider for Canvas API group operations

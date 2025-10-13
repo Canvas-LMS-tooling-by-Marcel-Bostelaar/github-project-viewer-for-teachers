@@ -7,6 +7,9 @@ use CanvasApiLibrary\Models\Course;
 use CanvasApiLibrary\Models\Submission;
 use CanvasApiLibrary\Models\Domain;
 use CanvasApiLibrary\Providers\StudentProvider;
+use CanvasApiLibrary\Providers\Utility\AbstractProvider;
+use CanvasApiLibrary\Providers\Utility\Lookup;
+use function CanvasApiLibrary\Providers\Utility\array_map_to_models;
 
 
 /**

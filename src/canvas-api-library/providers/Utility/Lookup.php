@@ -1,6 +1,6 @@
 <?php
 
-namespace CanvasApiLibrary\Providers;
+namespace CanvasApiLibrary\Providers\Utility;
 
 use CanvasApiLibrary\Models\Utility\ModelInterface;
 /**

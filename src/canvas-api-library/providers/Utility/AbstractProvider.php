@@ -1,5 +1,5 @@
 <?php
-namespace CanvasApiLibrary\Providers;
+namespace CanvasApiLibrary\Providers\Utility;
 use CanvasApiLibrary\Models\Utility\ModelInterface;
 use CanvasApiLibrary\Services\CanvasCommunicator;
 use CanvasApiLibrary\Services\StatusHandlerInterface;
