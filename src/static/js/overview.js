@@ -62,7 +62,7 @@ async function submitFeedback(button, submissionId) {
     
         let tempdiv = document.createElement('div');
         tempdiv.innerHTML = 'Reloading feedback...';
-        tempdiv.setAttribute('postload', `?course=${currentCourse}&assignment=${currentAssignment}&action=feedback&id=${submissionId}`);
+        feedbackDiv.setAttribute('postload', `?course=${currentCourse}&assignment=${currentAssignment}&action=feedback&id=${submissionId}`);
         feedbackDiv.prepend(tempdiv);
     
         
