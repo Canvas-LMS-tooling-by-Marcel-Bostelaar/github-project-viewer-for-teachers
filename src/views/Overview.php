@@ -127,8 +127,13 @@ function RenderSubmissionRow(IGithublinkSubmission $submission, string $baseURL)
     $status = $submission->getStatus();
     $appendToStatus = "";
     if($status == SubmissionStatus::NOTFOUND){
-        $url = $submission->getUrl();
-        formatted_var_dump($submission);
+        try{
+            $url = $submission->getUrl();
+        }
+        catch(IllegalCallToInvalidSubmissionException $e){
+            $url = "N/A";
+        }
+        // formatted_var_dump($submission);
         $appendToStatus = "<br>Submitted URL:<br><a href='$url'>$url</a>";
     }
     ?>

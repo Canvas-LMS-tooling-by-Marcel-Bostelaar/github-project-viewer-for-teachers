@@ -63,7 +63,16 @@ class UncachedGithubProvider{
      * @return CommitHistoryEntry[]|SubmissionStatus
      */
     protected function getCommitHistoryInternal(DisectedURL $url) : array | SubmissionStatus {
-        $data = githubCurlCall($url->toApiUrl() . "/commits");
+        return $this->getCommitHistoryInternalInteral($url->toApiUrl() . "/commits");
+    }
+    protected function getCommitHistoryInternalInteral(string $apiUrl) : array | SubmissionStatus {
+        $data = githubCurlCall($apiUrl);
+        if(isset($data['message'])){
+            if($data['message'] == "Moved Permanently"){
+                $newURL = $data['url'];
+                return $this->getCommitHistoryInternalInteral($newURL);
+            }
+        }
         if(isset($data['status'])){
             if($data["status"] == 404){
                 return SubmissionStatus::NOTFOUND;
